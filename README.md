@@ -1,4 +1,4 @@
-### Remote Viewer
+# Remote Viewer
 > \- simple REST API application to get list of images from ftp server and get image by address.
 
 ## About the application
