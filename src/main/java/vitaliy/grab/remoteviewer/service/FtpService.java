@@ -3,7 +3,7 @@ package vitaliy.grab.remoteviewer.service;
 import org.apache.commons.io.FileUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import vitaliy.grab.remoteviewer.repository.FtpRepository;
+import vitaliy.grab.remoteviewer.persistence.FtpRepository;
 
 import java.io.File;
 import java.io.IOException;
