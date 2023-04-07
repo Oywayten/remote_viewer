@@ -61,7 +61,7 @@ public class FtpRepository {
                 ftp.changeWorkingDirectory(new String(fileName.getBytes(), SERVER_CHARSET));
                 result.addAll(recursiveFilePath(newPath, fileName));
             } else if (isTarget && fileName.startsWith(prefix)) {
-                result.add(new RemoteFile(newPath));
+                result.add(new RemoteFile(fileName, newPath));
             }
         }
         return result;
