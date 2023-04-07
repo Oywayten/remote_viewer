@@ -3,6 +3,7 @@ package vitaliy.grab.remoteviewer.service;
 import org.apache.commons.io.FileUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import vitaliy.grab.remoteviewer.model.RemoteFile;
 import vitaliy.grab.remoteviewer.persistence.FtpRepository;
 
 import java.io.File;
@@ -23,7 +24,7 @@ public class FtpService {
         this.ftpRepository = ftpRepository;
     }
 
-    public List<String> getFilePaths() throws IOException {
+    public List<RemoteFile> getFilePaths() throws IOException {
         return ftpRepository.getFilePaths();
     }
 

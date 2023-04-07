@@ -6,6 +6,7 @@ import org.apache.commons.net.ftp.FTPClient;
 import org.apache.commons.net.ftp.FTPFile;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Repository;
+import vitaliy.grab.remoteviewer.model.RemoteFile;
 
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -24,7 +25,7 @@ import java.util.Objects;
 @Slf4j
 @Repository
 public class FtpRepository {
-    private static final String START_DIR = "";
+    private static final String START = "";
     private static final String DIR_SEP = "/";
     private static final Charset SERVER_CHARSET = StandardCharsets.ISO_8859_1;
     private static final Object ONE_DOT = ".";
@@ -33,20 +34,22 @@ public class FtpRepository {
     private final String dataStore;
     private final FTPClient ftp;
 
-    public FtpRepository(@Value("${download}") String dataStore, FTPClient ftp) {
-        this.dataStore = dataStore;
-        this.ftp = ftp;
-    }
-
     @Value("${photos}")
     private String photos;
 
     @Value("${prefix}")
     private String prefix;
 
-    private List<String> recursiveFilePath(String directory) throws IOException {
-        List<String> result = new ArrayList<>();
-        String path = ftp.printWorkingDirectory();
+    public FtpRepository(@Value("${download}") String dataStore, FTPClient ftp) {
+        this.dataStore = dataStore;
+        this.ftp = ftp;
+    }
+
+    private List<RemoteFile> recursiveFilePath(String path, String directory) throws IOException {
+        if ("".equals(path)) {
+            ftp.changeWorkingDirectory("");
+        }
+        List<RemoteFile> result = new ArrayList<>();
         FTPFile[] ftpFiles = ftp.listFiles();
         String fileName;
         String newPath;
@@ -56,16 +59,16 @@ public class FtpRepository {
             newPath = String.format(NEW_PATH_BUILD, path, DIR_SEP, fileName);
             if (ftpFile.isDirectory() && !Objects.equals(fileName, ONE_DOT) && !Objects.equals(fileName, TWO_DOTS)) {
                 ftp.changeWorkingDirectory(new String(fileName.getBytes(), SERVER_CHARSET));
-                result.addAll(recursiveFilePath(fileName));
+                result.addAll(recursiveFilePath(newPath, fileName));
             } else if (isTarget && fileName.startsWith(prefix)) {
-                result.add(new String(newPath.getBytes(), StandardCharsets.US_ASCII));
+                result.add(new RemoteFile(newPath));
             }
         }
         return result;
     }
 
-    public List<String> getFilePaths() throws IOException {
-        return recursiveFilePath(START_DIR);
+    public List<RemoteFile> getFilePaths() throws IOException {
+        return recursiveFilePath(START, START);
     }
 
 
