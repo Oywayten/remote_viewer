@@ -60,6 +60,7 @@ public class FtpRepository {
             if (ftpFile.isDirectory() && !Objects.equals(fileName, ONE_DOT) && !Objects.equals(fileName, TWO_DOTS)) {
                 ftp.changeWorkingDirectory(new String(fileName.getBytes(), SERVER_CHARSET));
                 result.addAll(recursiveFilePath(newPath, fileName));
+                ftp.changeToParentDirectory();
             } else if (isTarget && fileName.startsWith(prefix)) {
                 result.add(new RemoteFile(fileName, newPath));
             }
