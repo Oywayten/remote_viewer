@@ -57,22 +57,22 @@ public class FtpRepository {
         for (FTPFile ftpFile : ftpFiles) {
             fileName = ftpFile.getName();
             newPath = String.format(NEW_PATH_BUILD_FORMAT, startPath, DIR_SEP, fileName);
-            if (fileNameIsValidDir(fileName, ftpFile)) {
+            if (fileIsValidDir(fileName, ftpFile)) {
                 ftp.changeWorkingDirectory(new String(fileName.getBytes(), SERVER_CHARSET));
                 remoteFileDataList.addAll(getRemoteFileDataListByStartPathAndDirectory(newPath, fileName));
                 ftp.changeToParentDirectory();
-            } else if (fileNameIsValidFile(fileName, isTargetDir)) {
+            } else if (fileIsValid(fileName, isTargetDir)) {
                 remoteFileDataList.add(new RemoteFileData(newPath, fileName));
             }
         }
         return remoteFileDataList;
     }
 
-    private boolean fileNameIsValidFile(String fileName, boolean isTargetDir) {
+    private boolean fileIsValid(String fileName, boolean isTargetDir) {
         return isTargetDir && fileName.startsWith(namePrefixForSearchPhoto);
     }
 
-    private static boolean fileNameIsValidDir(String fileName, FTPFile ftpFile) {
+    private static boolean fileIsValidDir(String fileName, FTPFile ftpFile) {
         return ftpFile.isDirectory() && !Objects.equals(fileName, ONE_DOT) && !Objects.equals(fileName, TWO_DOTS);
     }
 
