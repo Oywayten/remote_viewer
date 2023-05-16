@@ -7,7 +7,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
-import vitaliy.grab.remoteviewer.model.RemoteFile;
+import vitaliy.grab.remoteviewer.model.RemoteFileData;
 import vitaliy.grab.remoteviewer.service.FtpService;
 
 import java.io.IOException;
@@ -24,15 +24,15 @@ public class RemoteFileController {
     private final FtpService ftpService;
 
     @GetMapping("/photos")
-    public List<RemoteFile> getPhotos() throws IOException {
-        return ftpService.getFilePaths();
+    public List<RemoteFileData> getPhotosPaths() throws IOException {
+        return ftpService.getPhotosPaths();
     }
 
     @GetMapping(
             value = "/photo",
             produces = MediaType.IMAGE_JPEG_VALUE
     )
-    public @ResponseBody byte[] getPhoto(@RequestParam(name = "path") String path) throws IOException {
-        return ftpService.getPhoto(path);
+    public @ResponseBody byte[] getPhotoByPath(@RequestParam(name = "path") String path) throws IOException {
+        return ftpService.getPhotoByPath(path);
     }
 }

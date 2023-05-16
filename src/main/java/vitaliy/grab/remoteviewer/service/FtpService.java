@@ -3,7 +3,7 @@ package vitaliy.grab.remoteviewer.service;
 import org.apache.commons.io.FileUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import vitaliy.grab.remoteviewer.model.RemoteFile;
+import vitaliy.grab.remoteviewer.model.RemoteFileData;
 import vitaliy.grab.remoteviewer.persistence.FtpRepository;
 
 import java.io.File;
@@ -16,22 +16,22 @@ import java.util.List;
 @Service
 public class FtpService {
 
-    private final String dataStore;
+    private final String cachingFolder;
     private final FtpRepository ftpRepository;
 
-    public FtpService(@Value("${download}") String dataStore, FtpRepository ftpRepository) {
-        this.dataStore = dataStore;
+    public FtpService(@Value("${download}") String cachingFolder, FtpRepository ftpRepository) {
+        this.cachingFolder = cachingFolder;
         this.ftpRepository = ftpRepository;
     }
 
-    public List<RemoteFile> getFilePaths() throws IOException {
-        return ftpRepository.getFilePaths();
+    public List<RemoteFileData> getPhotosPaths() throws IOException {
+        return ftpRepository.getRemoteFileDataList();
     }
 
-    public byte[] getPhoto(String fileName) throws IOException {
-        File file = new File(dataStore, fileName);
+    public byte[] getPhotoByPath(String path) throws IOException {
+        File file = new File(cachingFolder, path);
         if (!file.exists()) {
-            ftpRepository.downloadFile(fileName);
+            ftpRepository.cachingPhotoByPath(path);
         }
         return FileUtils.readFileToByteArray(file);
     }

@@ -8,7 +8,7 @@ import lombok.Data;
  */
 @Data
 @AllArgsConstructor
-public class RemoteFile {
-    private String name;
+public class RemoteFileData {
     private String path;
+    private String name;
 }

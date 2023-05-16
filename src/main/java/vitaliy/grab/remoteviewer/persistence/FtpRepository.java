@@ -6,7 +6,7 @@ import org.apache.commons.net.ftp.FTPClient;
 import org.apache.commons.net.ftp.FTPFile;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Repository;
-import vitaliy.grab.remoteviewer.model.RemoteFile;
+import vitaliy.grab.remoteviewer.model.RemoteFileData;
 
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -25,68 +25,78 @@ import java.util.Objects;
 @Slf4j
 @Repository
 public class FtpRepository {
-    private static final String START = "";
+    private static final String EMPTY_STRING = "";
     private static final String DIR_SEP = "/";
     private static final Charset SERVER_CHARSET = StandardCharsets.ISO_8859_1;
     private static final Object ONE_DOT = ".";
-    private static final String NEW_PATH_BUILD = "%s%s%s";
+    private static final String NEW_PATH_BUILD_FORMAT = "%s%s%s";
     private static final Object TWO_DOTS = "..";
-    private final String dataStore;
+    private final String cachingFolder;
     private final FTPClient ftp;
 
-    @Value("${photos}")
-    private String photos;
+    @Value("${directory_name_for_search}")
+    private String directoryNameForSearch;
 
     @Value("${prefix}")
-    private String prefix;
+    private String namePrefixForSearchPhoto;
 
-    public FtpRepository(@Value("${download}") String dataStore, FTPClient ftp) {
-        this.dataStore = dataStore;
+    public FtpRepository(@Value("${download}") String cachingFolder, FTPClient ftp) {
+        this.cachingFolder = cachingFolder;
         this.ftp = ftp;
     }
 
-    private List<RemoteFile> recursiveFilePath(String path, String directory) throws IOException {
-        if ("".equals(path)) {
-            ftp.changeWorkingDirectory("");
+    private List<RemoteFileData> getRemoteFileDataListByStartPathAndDirectory(String startPath, String currentDir) throws IOException {
+        if (EMPTY_STRING.equals(startPath)) {
+            ftp.changeWorkingDirectory(EMPTY_STRING);
         }
-        List<RemoteFile> result = new ArrayList<>();
+        List<RemoteFileData> remoteFileDataList = new ArrayList<>();
         FTPFile[] ftpFiles = ftp.listFiles();
         String fileName;
         String newPath;
-        boolean isTarget = photos.equals(directory);
+        boolean isTargetDir = directoryNameForSearch.equals(currentDir);
         for (FTPFile ftpFile : ftpFiles) {
             fileName = ftpFile.getName();
-            newPath = String.format(NEW_PATH_BUILD, path, DIR_SEP, fileName);
-            if (ftpFile.isDirectory() && !Objects.equals(fileName, ONE_DOT) && !Objects.equals(fileName, TWO_DOTS)) {
+            newPath = String.format(NEW_PATH_BUILD_FORMAT, startPath, DIR_SEP, fileName);
+            if (fileNameIsValidDir(fileName, ftpFile)) {
                 ftp.changeWorkingDirectory(new String(fileName.getBytes(), SERVER_CHARSET));
-                result.addAll(recursiveFilePath(newPath, fileName));
+                remoteFileDataList.addAll(getRemoteFileDataListByStartPathAndDirectory(newPath, fileName));
                 ftp.changeToParentDirectory();
-            } else if (isTarget && fileName.startsWith(prefix)) {
-                result.add(new RemoteFile(fileName, newPath));
+            } else if (fileNameIsValidFile(fileName, isTargetDir)) {
+                remoteFileDataList.add(new RemoteFileData(newPath, fileName));
             }
         }
-        return result;
+        return remoteFileDataList;
     }
 
-    public List<RemoteFile> getFilePaths() throws IOException {
-        return recursiveFilePath(START, START);
+    private boolean fileNameIsValidFile(String fileName, boolean isTargetDir) {
+        return isTargetDir && fileName.startsWith(namePrefixForSearchPhoto);
+    }
+
+    private static boolean fileNameIsValidDir(String fileName, FTPFile ftpFile) {
+        return ftpFile.isDirectory() && !Objects.equals(fileName, ONE_DOT) && !Objects.equals(fileName, TWO_DOTS);
+    }
+
+    public List<RemoteFileData> getRemoteFileDataList() throws IOException {
+        return getRemoteFileDataListByStartPathAndDirectory(EMPTY_STRING, EMPTY_STRING);
     }
 
 
-    public void downloadFile(String path) throws IOException {
+    public void cachingPhotoByPath(String path) throws IOException {
         ftp.setFileType(FTP.BINARY_FILE_TYPE);
-        downloadFile(ftp, path);
+        cachingPhotoByPathFromFtp(path, ftp);
     }
 
-    private void downloadFile(FTPClient ftp, String path) throws IOException {
-        Path newFilePath = Paths.get(dataStore, path);
-        Path parent = newFilePath.getParent();
-        Files.createDirectories(parent);
-        String fileName = newFilePath.getFileName().toString();
-        FileOutputStream out = new FileOutputStream(newFilePath.toString());
-        for (Path path1 : Paths.get(path).getParent()) {
-            ftp.changeWorkingDirectory(new String(path1.toString().getBytes(), SERVER_CHARSET));
+    private void cachingPhotoByPathFromFtp(String ftpFilePath, FTPClient ftp) throws IOException {
+        Path newLocalFilePath = Paths.get(cachingFolder, ftpFilePath);
+        Path localDirectories = newLocalFilePath.getParent();
+        Files.createDirectories(localDirectories);
+        Path ftpDirectories = Paths.get(ftpFilePath).getParent();
+        for (Path directory : ftpDirectories) {
+            String directoryName = new String(directory.toString().getBytes(), SERVER_CHARSET);
+            ftp.changeWorkingDirectory(directoryName);
         }
+        String fileName = newLocalFilePath.getFileName().toString();
+        FileOutputStream out = new FileOutputStream(newLocalFilePath.toString());
         ftp.retrieveFile(fileName, out);
     }
 }
